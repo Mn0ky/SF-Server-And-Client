@@ -1,0 +1,26 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <OutputType>Exe</OutputType>
+        <TargetFramework>net7.0</TargetFramework>
+        <RootNamespace>SF_Server</RootNamespace>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>disable</Nullable>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <Reference Include="Lidgren.Network">
+        <HintPath>Lidgren.Network.dll</HintPath>
+      </Reference>
+      <Reference Include="UnityEngine">
+        <HintPath>UnityEngine.dll</HintPath>
+      </Reference>
+    </ItemGroup>
+
+    <ItemGroup>
+      <None Remove="Lidgren.Network.dll" />
+      <None Remove="Steamworks.NET.dll" />
+      <None Remove="UnityEngine.dll" />
+    </ItemGroup>
+
+</Project>

@@ -1,0 +1,22 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SF-Server", "SF-Server\SF-Server.csproj", "{D054F956-B80D-4B47-8F00-20BF993C6FED}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SF_Lidgren", "SF_Lidgren\SF_Lidgren.csproj", "{AB9D4F33-32B3-48B9-A5C8-C6BDC20A02F8}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{D054F956-B80D-4B47-8F00-20BF993C6FED}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D054F956-B80D-4B47-8F00-20BF993C6FED}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D054F956-B80D-4B47-8F00-20BF993C6FED}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D054F956-B80D-4B47-8F00-20BF993C6FED}.Release|Any CPU.Build.0 = Release|Any CPU
+		{AB9D4F33-32B3-48B9-A5C8-C6BDC20A02F8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{AB9D4F33-32B3-48B9-A5C8-C6BDC20A02F8}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{AB9D4F33-32B3-48B9-A5C8-C6BDC20A02F8}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{AB9D4F33-32B3-48B9-A5C8-C6BDC20A02F8}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal
