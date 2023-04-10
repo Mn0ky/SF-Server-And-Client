@@ -12,16 +12,10 @@ public class TempGUI : MonoBehaviour
     public static int Port = 1337;
     private Rect _menuRect = new(Screen.width/2f, Screen.height/2f, 375f, 375f);
     
-    private void Start()
-    {
-        Debug.Log("Started GUI in TempGUIManager!");
-    }
+    private void Start() => Debug.Log("Started GUI in TempGUIManager!");
 
-    private void Update()
-    {
-        _showMenu = true;
-    }
-    
+    private void Update() => _showMenu = true;
+
     public void OnGUI()
     {
         if (!_showMenu) return;
@@ -30,9 +24,8 @@ public class TempGUI : MonoBehaviour
 
     private void JoinWindow(int window)
     {
-        //var menuCenter = _menuRect.center;
-        Address = GUILayout.TextField("localhost");
-        Port = int.Parse(GUILayout.TextField("1337"));
+        Address = GUILayout.TextField(Address);
+        Port = int.Parse(GUILayout.TextField(Port.ToString()));
 
         if (GUILayout.Button("Join"))
         {
@@ -44,10 +37,16 @@ public class TempGUI : MonoBehaviour
         {
             Debug.Log("Exit button clicked, attempting to leave socket server...");
             var importantData = MatchmakingHandlerSocketsPatches.ImportantData;
-            
             importantData.LocalClient.Disconnect("I'm leaving >:(");
             SteamUser.CancelAuthTicket(importantData.AuthTicketHandler);
             Debug.Log("Auth ticket has been canceled");
+        }
+        
+        if (GUILayout.Button("Status"))
+        {
+            var importantData = MatchmakingHandlerSocketsPatches.ImportantData;
+            Debug.Log("Connection status: " + importantData.ServerConnection.Status);
+            Debug.Log("Connection status: " + importantData.LocalClient.Status);
         }
 
         GUI.DragWindow(new Rect(0, 0, 10000, 10000));

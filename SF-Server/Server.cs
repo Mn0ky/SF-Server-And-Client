@@ -8,6 +8,7 @@ public class Server
 {
     // TODO: Handle graceful server shutdowns (ctrl+c, etc.)
     // TODO: Handle cold exits by clients (directly quiting the game instead of returning to menu)
+    // TODO: Possibility that multiple connections can be made by same client, bad!
     private readonly NetServer _masterServer;
     private readonly string _webApitoken;
     private readonly SteamId _hostSteamId;
@@ -18,7 +19,6 @@ public class Server
     private const string StickFightAppId = "674940"; 
     private const int MaxPlayerCount = 4;
 
-    public NetServer MasterServer => _masterServer;
     private int NumberOfClients => _masterServer.Connections.Count;
 
     public Server(int port, string steamWebApiToken, SteamId hostSteamId)
@@ -153,8 +153,23 @@ public class Server
         
         Console.WriteLine("Client's status changed: " + newStatus + "\nReason: " + changeReason);
         
-        if (newStatus == NetConnectionStatus.Disconnected)
-            OnPlayerExit(msg);
+        switch (newStatus)
+        {
+            case NetConnectionStatus.RespondedConnect:
+                Console.WriteLine("Number of clients connected is now: " + NumberOfClients);
+                return;
+            case NetConnectionStatus.Disconnected:
+                OnPlayerExit(msg);
+                return;
+            case NetConnectionStatus.None:
+            case NetConnectionStatus.InitiatedConnect:
+            case NetConnectionStatus.ReceivedInitiation:
+            case NetConnectionStatus.RespondedAwaitingApproval:
+            case NetConnectionStatus.Connected:
+            case NetConnectionStatus.Disconnecting:
+            default:
+                return;
+        }
     }
 
     private void OnPlayerExit(NetIncomingMessage msg)
@@ -184,7 +199,7 @@ public class Server
 
         Console.WriteLine("Player has successfully authed, allowing them to join...");
         //_approvedIPs.Add(senderConnection.RemoteEndPoint.Address);
-        senderConnection.Approve(); // Client will join
+        senderConnection.Approve(_masterServer.CreateMessage("You have been accepted!")); // Client will join
         _masterServer.Recycle(msg);
         //_masterServer.SendToAll();
     }
@@ -223,7 +238,7 @@ public class Server
 
         var playerSteamID = new SteamId(ulong.Parse(authResponseData.Steamid));
 
-        if (!playerSteamID.IsBadId()) return false; // Double check validity of steamID
+        if (playerSteamID.IsBadId()) return false; // Double check validity of steamID
 
         var playerUsername = await FetchSteamUserName(playerSteamID);
         

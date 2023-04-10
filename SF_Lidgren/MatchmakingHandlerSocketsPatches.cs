@@ -27,7 +27,7 @@ public static class MatchmakingHandlerSocketsPatches
         
         var netPeerConfiguration = new NetPeerConfiguration(Plugin.AppIdentifier);
         netPeerConfiguration.EnableMessageType(NetIncomingMessageType.DiscoveryResponse);
-        
+
         var netClient = new NetClient(netPeerConfiguration);
         netClient.Start();
         ___m_Client = netClient;
@@ -45,9 +45,7 @@ public static class MatchmakingHandlerSocketsPatches
         // Attempt to connect to server
         ___m_NetConnection = ___m_Client.Connect(TempGUI.Address, TempGUI.Port, onConnectMsg);
         ImportantData = new LidgrenData(ticketHandler, ___m_Client, ___m_NetConnection);
-        var connection = ImportantData.ServerConnection;
-        Debug.Log("Connection status after attempting to join: " + connection.Status);
-        
+
         return false;
     }
 }

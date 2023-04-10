@@ -10,4 +10,8 @@
 	<s:Boolean x:Key="/Default/AddReferences/RecentPaths/=D_003A_005CEnvironments_005CSF_002DServer_005CSF_002DServer_005CUnityEngine_002Edll/@EntryIndexedValue">True</s:Boolean>
 	<s:Boolean x:Key="/Default/AddReferences/RecentPaths/=D_003A_005CEnvironments_005CSF_002DServer_005CSF_005FLidgren_005CAssembly_002DCSharp_002Dfirstpass_002Edll/@EntryIndexedValue">True</s:Boolean>
 	<s:Boolean x:Key="/Default/AddReferences/RecentPaths/=D_003A_005CEnvironments_005CSF_002DServer_005CSF_005FLidgren_005CAssembly_002DCSharp_002Edll/@EntryIndexedValue">True</s:Boolean>
-	<s:Boolean x:Key="/Default/AddReferences/RecentPaths/=D_003A_005CEnvironments_005CSF_002DServer_005CSF_005FLidgren_005CLidgren_002ENetwork_002Edll/@EntryIndexedValue">True</s:Boolean></wpf:ResourceDictionary>
+	<s:Boolean x:Key="/Default/AddReferences/RecentPaths/=D_003A_005CEnvironments_005CSF_002DServer_005CSF_005FLidgren_005CLidgren_002ENetwork_002Edll/@EntryIndexedValue">True</s:Boolean>
+	
+	
+	
+	</wpf:ResourceDictionary>

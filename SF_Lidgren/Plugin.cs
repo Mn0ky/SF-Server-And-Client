@@ -1,7 +1,5 @@
 ﻿using BepInEx;
 using HarmonyLib;
-using Steamworks;
-using UnityEngine;
 
 namespace SF_Lidgren;
 
