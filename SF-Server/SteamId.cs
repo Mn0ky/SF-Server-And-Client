@@ -7,7 +7,7 @@ public readonly struct SteamId : IEquatable<SteamId>, IComparable<SteamId>
 {
     private readonly ulong id;
     
-    public SteamId() => id = 0;
+    //public SteamId() => id = 0;
     public SteamId(ulong steamId) => id = steamId;
 
     public bool Equals(SteamId other) => this == other;
