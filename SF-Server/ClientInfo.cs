@@ -35,10 +35,4 @@ public class ClientInfo : IEquatable<ClientInfo>
     public override string ToString() 
         => $"\nSteamID: {SteamID}\nName: {Username}\nAddress: {Address}\nAuthTicket: {AuthTicket.ToString().Truncate(10)}" 
            + $"\nPlayerIndex: {PlayerIndex}\nPing: {Ping}";
-
-    // private void OnPersonaStateChangeHandler(PersonaStateChange_t callback)
-    // {
-    //     Console.WriteLine("OnPersonaStateChangeHandler has been called!!");
-    //     Username = SteamFriends.GetFriendPersonaName(SteamID);
-    // }
 }

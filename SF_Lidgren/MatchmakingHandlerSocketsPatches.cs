@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Reflection;
 using HarmonyLib;
 using Lidgren.Network;
 using Steamworks;
@@ -16,7 +17,12 @@ public static class MatchmakingHandlerSocketsPatches
         var joinServerMethodPrefix = new HarmonyMethod(typeof(MatchmakingHandlerSocketsPatches)
             .GetMethod(nameof(JoinServerMethodPrefix)));
         
+        var joinServerAtMethod = AccessTools.Method(typeof(MatchMakingHandlerSockets), nameof(MatchMakingHandlerSockets.JoinServerAt));
+        var joinServerAtMethodPrefix = new HarmonyMethod(typeof(MatchmakingHandlerSocketsPatches)
+            .GetMethod(nameof(JoinServerMethodAtPrefix)));
+        
         harmonyInstance.Patch(joinServerMethod, prefix: joinServerMethodPrefix);
+        harmonyInstance.Patch(joinServerAtMethod, prefix: joinServerAtMethodPrefix);
     }
 
     public static bool JoinServerMethodPrefix(ref bool ___m_Active, ref bool ___m_IsServer, ref NetClient ___m_Client,
@@ -24,6 +30,8 @@ public static class MatchmakingHandlerSocketsPatches
     {
         ___m_Active = true;
         ___m_IsServer = false;
+        SetRunningOnSockets(true);
+        Console.WriteLine("Matchmaking running on sockets?: " + MatchmakingHandler.RunningOnSockets);
         
         var netPeerConfiguration = new NetPeerConfiguration(Plugin.AppIdentifier);
         netPeerConfiguration.EnableMessageType(NetIncomingMessageType.DiscoveryResponse);
@@ -48,4 +56,15 @@ public static class MatchmakingHandlerSocketsPatches
 
         return false;
     }
+
+    public static bool JoinServerMethodAtPrefix() => false;
+
+    public static void SetRunningOnSockets(bool isOnSockets) 
+        => AccessTools.Property(typeof(MatchmakingHandler), nameof(MatchmakingHandler.RunningOnSockets))
+            .SetValue(null, // obj instance is null because property is static
+                isOnSockets,
+                BindingFlags.Default,
+                null,
+                null,
+                null!);
 }

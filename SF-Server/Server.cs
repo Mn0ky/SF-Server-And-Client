@@ -7,6 +7,7 @@ namespace SF_Server;
 public class Server
 {
     // TODO: Handle graceful server shutdowns (ctrl+c, etc.)
+    // TODO: Look at MultiplayerManager.RequestClientInit() for next steps
     // TODO: Handle cold exits by clients (directly quiting the game instead of returning to menu)
     // TODO: Possibility that multiple connections can be made by same client, bad!
     private readonly NetServer _masterServer;
