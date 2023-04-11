@@ -4,6 +4,7 @@
 # Rider ignored files
 /projectSettingsUpdater.xml
 /.idea.SF-Server.iml
+../../SF-Server.sln.DotSettings.user
 /modules.xml
 /contentModel.xml
 # Editor-based HTTP Client requests
