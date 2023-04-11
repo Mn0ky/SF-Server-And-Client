@@ -13,6 +13,7 @@ public class Server
     private readonly NetServer _masterServer;
     private readonly string _webApitoken;
     private readonly SteamId _hostSteamId;
+    private readonly HttpClient _httpClient;
     private readonly JsonSerializerOptions _jsonOptions;
     private readonly ClientInfo[] _clients;
     //private readonly List<IPAddress> _approvedIPs;
@@ -37,6 +38,7 @@ public class Server
         _masterServer = server;
         _webApitoken = steamWebApiToken;
         _hostSteamId = hostSteamId;
+        _httpClient = new HttpClient(); // Perhaps configure SocketsHttpHandler.PooledConnectionLifetime ?
         _jsonOptions = new JsonSerializerOptions {PropertyNameCaseInsensitive = true};
         _clients = new ClientInfo[4];
         //_approvedIPs = new List<IPAddress>();
@@ -45,8 +47,7 @@ public class Server
     public bool Start()
     {
         _masterServer.Start();
-        //var isSteamAPIStarted = SteamAPI.Init();
-        
+
         Console.WriteLine("Starting up UDP socket server: " + _masterServer.Status);
         if (string.IsNullOrEmpty(_webApitoken))
         {
@@ -54,7 +55,7 @@ public class Server
                               "This is required for user auth so the server won't start without it.");
         }
 
-        return _masterServer.Status == NetPeerStatus.Running /*&& isSteamAPIStarted*/ && !string.IsNullOrEmpty(_webApitoken);
+        return _masterServer.Status == NetPeerStatus.Running && !string.IsNullOrEmpty(_webApitoken);
     }
 
     public void Close()
@@ -109,7 +110,6 @@ public class Server
 
         Console.WriteLine("Recycling msg with length: " + msg.Data.Length + "\n");
         _masterServer.Recycle(msg);
-        //SteamAPI.RunCallbacks();
     }
     
     private void OnPlayerDiscovered(NetIncomingMessage msg)
@@ -213,14 +213,10 @@ public class Server
         var authTicket = new AuthTicket(msg.Data);
         Console.WriteLine("Attempting to verify user ticket: " + authTicket);
         
-        var authTicketURL = "https://api.steampowered.com//ISteamUserAuth/AuthenticateUserTicket/v1/" +
+        var authTicketUri = "https://api.steampowered.com//ISteamUserAuth/AuthenticateUserTicket/v1/" +
                             $"?key={_webApitoken}&appid={StickFightAppId}&ticket={authTicket}&steamid={_hostSteamId}";
-
-        using var httpClient = new HttpClient();
-        using var request = new HttpRequestMessage(new HttpMethod("GET"), authTicketURL);
         
-        var response = await httpClient.SendAsync(request);
-        var jsonResponse = await response.Content.ReadAsStringAsync();
+        var jsonResponse = await _httpClient.GetStringAsync(authTicketUri);
         Console.WriteLine("Steam auth json response: " + jsonResponse);
         
         var authResponse = JsonSerializer.Deserialize<AuthResponse>(jsonResponse, _jsonOptions);
@@ -255,14 +251,10 @@ public class Server
     
     private async Task<string> FetchSteamUserName(SteamId clientSteamId)
     {
-        var playerSummariesURL = "https://api.steampowered.com/ISteamUser/GetPlayerSummaries/v0002/" +
+        var playerSummariesUri = "https://api.steampowered.com/ISteamUser/GetPlayerSummaries/v0002/" +
                                   $"?key={_webApitoken}&steamids={clientSteamId}";
         
-        using var httpClient = new HttpClient();
-        using var request = new HttpRequestMessage(new HttpMethod("GET"), playerSummariesURL);
-        
-        var response = await httpClient.SendAsync(request);
-        var jsonResponse = await response.Content.ReadAsStringAsync();
+        var jsonResponse = await _httpClient.GetStringAsync(playerSummariesUri);
         var profileSummary = JsonSerializer.Deserialize<ProfileSummaryResponse>(jsonResponse, _jsonOptions);
         
         if (profileSummary is null || profileSummary.Response.Players.Count == 0)
@@ -322,7 +314,7 @@ public class Server
         => _clients.FirstOrDefault(player => player is not null && Equals(player.Address, address));
 
     private ClientInfo GetClient(int playerIndex)
-        => _clients.FirstOrDefault(player => player is not null && player.PlayerIndex == playerIndex);
+        => _clients[playerIndex];
 
     private ClientInfo GetClient(SteamId id) 
         => _clients.FirstOrDefault(player => player is not null && player.SteamID == id);

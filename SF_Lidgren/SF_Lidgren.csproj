@@ -36,9 +36,9 @@
     </ItemGroup>
 
     <ItemGroup>
+      <None Remove="UnityEngine.dll" />
       <None Remove="Assembly-CSharp.dll" />
       <None Remove="Assembly-CSharp-firstpass.dll" />
       <None Remove="Lidgren.Network.dll" />
-      <None Remove="UnityEngine.dll" />
     </ItemGroup>
 </Project>
