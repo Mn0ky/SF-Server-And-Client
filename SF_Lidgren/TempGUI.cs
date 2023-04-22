@@ -1,7 +1,5 @@
-﻿using System;
-using Steamworks;
+﻿using Steamworks;
 using UnityEngine;
-using Object = UnityEngine.Object;
 
 namespace SF_Lidgren;
 
@@ -36,17 +34,20 @@ public class TempGUI : MonoBehaviour
         if (GUILayout.Button("Exit"))
         {
             Debug.Log("Exit button clicked, attempting to leave socket server...");
-            var importantData = MatchmakingHandlerSocketsPatches.ImportantData;
+            var importantData = NetworkUtils.LidgrenData;
             importantData.LocalClient.Disconnect("I'm leaving >:(");
             SteamUser.CancelAuthTicket(importantData.AuthTicketHandler);
             Debug.Log("Auth ticket has been canceled");
+            GameManager.Instance.mMultiplayerManager.OnDisconnected();
         }
         
         if (GUILayout.Button("Status"))
         {
-            var importantData = MatchmakingHandlerSocketsPatches.ImportantData;
+            var importantData = NetworkUtils.LidgrenData;
             Debug.Log("Connection status: " + importantData.ServerConnection.Status);
-            Debug.Log("Connection status: " + importantData.LocalClient.Status);
+            //Debug.Log("Connection status: " + importantData.LocalClient.Status);
+            Debug.Log("Is inside lobby: " + MatchmakingHandler.Instance.IsInsideLobby);
+            Debug.Log("Is network match: " + MatchmakingHandler.IsNetworkMatch);
         }
 
         GUI.DragWindow(new Rect(0, 0, 10000, 10000));

@@ -1,5 +1,4 @@
 ﻿using System.Net;
-using System.Text.Json;
 using Lidgren.Network;
 
 namespace SF_Server;
@@ -13,6 +12,9 @@ public class ClientInfo : IEquatable<ClientInfo>
     public NetConnectionStatus Status { get; set; }
     public int PlayerIndex { get; }
     public int Ping { get; set; }
+    public PositionPackage PositionInfo { get; set; }
+    public WeaponPackage WeaponInfo { get; set; }
+    public int Hp { get; set; }
     public AuthTicket AuthTicket { get; }
 
     public ClientInfo(SteamId steamID, string steamUsername/*, NetConnection peer*/, AuthTicket authTicket, IPAddress address, int playerIndex)
@@ -24,6 +26,7 @@ public class ClientInfo : IEquatable<ClientInfo>
         Address = address;
         PlayerIndex = playerIndex;
         Ping = 0;
+        PositionInfo = new PositionPackage();
     }
 
     public override bool Equals(object obj) => obj is ClientInfo client && Equals(client.Address, Address);

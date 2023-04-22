@@ -9,10 +9,12 @@ namespace SF_Lidgren;
 
 public static class MatchmakingHandlerSocketsPatches
 {
-    public static LidgrenData ImportantData;
-
     public static void Patches(Harmony harmonyInstance)
     {
+        var readMessageMethod = AccessTools.Method(typeof(MatchMakingHandlerSockets), "ReadMessage");
+        var readMessageMethodPrefix = new HarmonyMethod(typeof(MatchmakingHandlerSocketsPatches)
+            .GetMethod(nameof(ReadMessageMethodPrefix)));
+
         var joinServerMethod = AccessTools.Method(typeof(MatchMakingHandlerSockets), nameof(MatchMakingHandlerSockets.JoinServer));
         var joinServerMethodPrefix = new HarmonyMethod(typeof(MatchmakingHandlerSocketsPatches)
             .GetMethod(nameof(JoinServerMethodPrefix)));
@@ -20,9 +22,34 @@ public static class MatchmakingHandlerSocketsPatches
         var joinServerAtMethod = AccessTools.Method(typeof(MatchMakingHandlerSockets), nameof(MatchMakingHandlerSockets.JoinServerAt));
         var joinServerAtMethodPrefix = new HarmonyMethod(typeof(MatchmakingHandlerSocketsPatches)
             .GetMethod(nameof(JoinServerMethodAtPrefix)));
-        
+
+        harmonyInstance.Patch(readMessageMethod, prefix: readMessageMethodPrefix);
         harmonyInstance.Patch(joinServerMethod, prefix: joinServerMethodPrefix);
         harmonyInstance.Patch(joinServerAtMethod, prefix: joinServerAtMethodPrefix);
+    }
+    
+    public static bool ReadMessageMethodPrefix(ref bool ___m_Active, ref NetClient ___m_Client, ref NetIncomingMessage __result)
+    {
+        NetIncomingMessage msg;
+        __result = null;
+        
+        if (!___m_Active) return false;
+        if ((msg = ___m_Client.ReadMessage()) == null) return false;
+
+        var channel = msg.SequenceChannel;
+        Debug.Log("Msg has channel: " + channel);
+        
+        if (channel is -1 or 0 or 1) // Don't want NetworkPlayer updates going through the normal p2p handler
+        {
+            __result = msg;
+            return false;
+        }
+
+        Debug.Log("Packet is meant for network player!");
+        
+        var senderPlayerID = (channel - 2) / 2;
+        NetworkUtils.NetworkPlayerPackets[senderPlayerID] = msg;
+        return false;
     }
 
     public static bool JoinServerMethodPrefix(ref bool ___m_Active, ref bool ___m_IsServer, ref NetClient ___m_Client,
@@ -32,8 +59,9 @@ public static class MatchmakingHandlerSocketsPatches
         ___m_IsServer = false;
         SetRunningOnSockets(true);
         Console.WriteLine("Matchmaking running on sockets?: " + MatchmakingHandler.RunningOnSockets);
-        
+
         var netPeerConfiguration = new NetPeerConfiguration(Plugin.AppIdentifier);
+
         netPeerConfiguration.EnableMessageType(NetIncomingMessageType.DiscoveryResponse);
 
         var netClient = new NetClient(netPeerConfiguration);
@@ -52,14 +80,14 @@ public static class MatchmakingHandlerSocketsPatches
 
         // Attempt to connect to server
         ___m_NetConnection = ___m_Client.Connect(TempGUI.Address, TempGUI.Port, onConnectMsg);
-        ImportantData = new LidgrenData(ticketHandler, ___m_Client, ___m_NetConnection);
+        NetworkUtils.LidgrenData = new LidgrenData(ticketHandler, ___m_Client, ___m_NetConnection);
 
         return false;
     }
 
     public static bool JoinServerMethodAtPrefix() => false;
 
-    public static void SetRunningOnSockets(bool isOnSockets) 
+    private static void SetRunningOnSockets(bool isOnSockets) 
         => AccessTools.Property(typeof(MatchmakingHandler), nameof(MatchmakingHandler.RunningOnSockets))
             .SetValue(null, // obj instance is null because property is static
                 isOnSockets,

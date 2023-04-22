@@ -19,6 +19,14 @@ public class Plugin : BaseUnityPlugin
         Logger.LogInfo("Applying MatchmakingHandlerSockets patches...");
         MatchmakingHandlerSocketsPatches.Patches(harmony);
         Logger.LogInfo("Applying MatchmakingHandler patch...");
-        MatchMakingHandlerPatch.Patch(harmony);
+        MatchMakingHandlerPatches.Patches(harmony);
+        Logger.LogInfo("Applying MultiplayerManagerSockets Patches...");
+        MultiplayerManagerSocketsPatches.Patches(harmony);
+        Logger.LogInfo("Applying MultiplayerManager Patch...");
+        MultiplayerManagerPatches.Patch(harmony);
+        Logger.LogInfo("Applying P2PPackageHandler Patches...");
+        P2PPackageHandlerPatch.Patches(harmony);
+        Logger.LogInfo("Applying NetworkPlayer Patches...");
+        NetworkPlayerPatches.Patches(harmony);
     }
 }

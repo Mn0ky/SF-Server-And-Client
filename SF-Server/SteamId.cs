@@ -5,7 +5,7 @@ namespace SF_Server;
 [StructLayout(LayoutKind.Sequential, Pack = 4)]
 public readonly struct SteamId : IEquatable<SteamId>, IComparable<SteamId>
 {
-    private readonly ulong id;
+    public readonly ulong id;
     
     //public SteamId() => id = 0;
     public SteamId(ulong steamId) => id = steamId;
