@@ -39,16 +39,26 @@ public static class MatchmakingHandlerSocketsPatches
         var channel = msg.SequenceChannel;
         Debug.Log("Msg has channel: " + channel);
         
-        if (channel is -1 or 0 or 1) // Don't want NetworkPlayer updates going through the normal p2p handler
+        if (channel is > -2 and < 2 or > 9) // Don't want NetworkPlayer updates going through the normal p2p handler
         {
             __result = msg;
             return false;
         }
 
-        Debug.Log("Packet is meant for network player!");
+        Debug.Log("Packet is meant for NetworkPlayer!");
+        var isUpdateChannel = channel % 2 == 0; // Whether channel is update or event channel
+        int senderPlayerID;
         
-        var senderPlayerID = (channel - 2) / 2;
-        NetworkUtils.NetworkPlayerPackets[senderPlayerID] = msg;
+        if (isUpdateChannel)
+        {
+            senderPlayerID = (channel - 2) / 2;
+            NetworkUtils.PlayerUpdatePackets[senderPlayerID] = msg;
+            return false;   
+        }
+      
+        Console.WriteLine($"Adding msg with channel {channel} to event packets array!");
+        senderPlayerID = (channel - 3) / 2;
+        NetworkUtils.PlayerEventPackets[senderPlayerID] = msg;
         return false;
     }
 

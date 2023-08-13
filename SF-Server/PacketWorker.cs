@@ -10,17 +10,29 @@ public class PacketWorker
 
 	public void ParseGamePacket(NetIncomingMessage msg)
     {
-        //using var memoryStream = new MemoryStream(msg);
-        //using var binaryReader = new BinaryReader(memoryStream);
-        
-        //uint lastTimeStamp = MultiplayerManager.LastTimeStamp;
+	    //uint lastTimeStamp = MultiplayerManager.LastTimeStamp;
         Console.WriteLine("Raw Data length: " + msg.Data.Length);
         var timeSent = msg.ReadUInt32(); // <--- Time packet was sent
         Console.WriteLine("Packet sent at time: " + timeSent);
         
         var msgType = (SfPacketType)msg.ReadByte();
+        var msgChannel = msg.SequenceChannel;
         Console.WriteLine("Parsed StickFight packet of type: " + msgType);
+        Console.WriteLine("Got channel of: " + msgChannel);
+		
+        // if (msgChannel is > 1 and < 10) // Is update or event packet
+        // {
+	       //  var senderID = msgChannel % 2 == 0 ? (msgChannel - 2) / 2 : (msgChannel - 3) / 2;
+	       //  var senderAddress = msg.SenderConnection.RemoteEndPoint.Address;
+	       //  
+	       //  if ( _server.GetClient(senderAddress).PlayerIndex != senderID)
+	       //  {
+		      //   Console.WriteLine("Sender channel is not from the same client, ignoring...");
+		      //   return;
+	       //  }
+        // }
 
+        // TODO: Add logic for timeSent
         //if (num < lastTimeStamp) Console.WriteLine("Packet is obsolete!");
         //var data = msg.ReadBytes(msg.Data.Length - 6); // Count timeSent, msgType, and 1 for offset byte
         //Console.WriteLine("Data length: " + msg.Data.Length);
@@ -52,7 +64,6 @@ public class PacketWorker
 			//_server.OnInitFromServer(data);
 			return;
 		case SfPacketType.ClientRequestingIndex:
-			// this.SendMessageToAllClients(array, P2PPackageHandler.MsgType.ClientJoined, true, 0UL, EP2PSend.k_EP2PSendReliable, 0);
 			_server.OnPlayerRequestingIndex(user);
 			return;
 		case SfPacketType.ClientRequestingToSpawn:
@@ -60,6 +71,12 @@ public class PacketWorker
 			return;
 		case SfPacketType.PlayerUpdate:
 			_server.OnPlayerUpdate(user, msg);
+			return;
+		case SfPacketType.PlayerForceAdded:
+			_server.OnPlayerForceAdded(user, msg);
+			return;
+		case SfPacketType.PlayerTookDamage:
+			_server.OnPlayerTookDamage(user, msg);
 			return;
 		case SfPacketType.ClientSpawned:
 			//this.mNetworkHandler.OnPlayerSpawned(data);

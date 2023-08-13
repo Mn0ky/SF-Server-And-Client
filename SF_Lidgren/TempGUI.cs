@@ -34,11 +34,7 @@ public class TempGUI : MonoBehaviour
         if (GUILayout.Button("Exit"))
         {
             Debug.Log("Exit button clicked, attempting to leave socket server...");
-            var importantData = NetworkUtils.LidgrenData;
-            importantData.LocalClient.Disconnect("I'm leaving >:(");
-            SteamUser.CancelAuthTicket(importantData.AuthTicketHandler);
-            Debug.Log("Auth ticket has been canceled");
-            GameManager.Instance.mMultiplayerManager.OnDisconnected();
+            NetworkUtils.ExitServer(true);
         }
         
         if (GUILayout.Button("Status"))

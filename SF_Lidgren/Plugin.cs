@@ -28,5 +28,7 @@ public class Plugin : BaseUnityPlugin
         P2PPackageHandlerPatch.Patches(harmony);
         Logger.LogInfo("Applying NetworkPlayer Patches...");
         NetworkPlayerPatches.Patches(harmony);
+        Logger.LogInfo("Applying PauseManager Patches...");
+        PauseManagerPatches.Patches(harmony);
     }
 }

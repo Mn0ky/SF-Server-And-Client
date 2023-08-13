@@ -26,6 +26,7 @@ public class ClientInfo : IEquatable<ClientInfo>
         Address = address;
         PlayerIndex = playerIndex;
         Ping = 0;
+        Hp = 0;
         PositionInfo = new PositionPackage();
     }
 

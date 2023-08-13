@@ -33,7 +33,7 @@ public class Server
             Port = port,
             MaximumConnections = MaxPlayerCount
         };
-        
+
         config.EnableMessageType(NetIncomingMessageType.DiscoveryRequest);
         config.EnableMessageType(NetIncomingMessageType.ConnectionApproval);
         
@@ -365,7 +365,7 @@ public class Server
         
         _masterServer.SendToAll(msg, ignoredUser, sendMethod, channel);
     }
-
+    
     public void OnPlayerRequestingIndex(NetConnection user)
     {
         var playerInfo = GetClient(user.RemoteEndPoint.Address);
@@ -444,7 +444,8 @@ public class Server
             SfPacketType.PlayerUpdate,
             user,
             NetDeliveryMethod.UnreliableSequenced,
-            playerUpdateData.SequenceChannel);
+            playerUpdateData.SequenceChannel
+            );
 
         var positionInfo = new PositionPackage
         {
@@ -490,7 +491,37 @@ public class Server
         weaponInfo.WeaponType = playerUpdateData.ReadByte();
         client.WeaponInfo = weaponInfo;
         
-        Console.WriteLine("Position info: " + positionInfo);
-        Console.WriteLine("Weapon info: " + weaponInfo);
+        //Console.WriteLine("Position info: " + positionInfo);
+        //Console.WriteLine("Weapon info: " + weaponInfo);
+    }
+
+    public void OnPlayerForceAdded(NetConnection user, NetIncomingMessage damageData)
+    {
+        // TODO: Add logic for updating anything serverside
+        // var client = GetClient(user.RemoteEndPoint.Address);
+        
+        SendPacketToAllUsers(
+            damageData.PeekBytes(damageData.Data.Length - 5),
+            SfPacketType.PlayerForceAdded,
+            user,
+            NetDeliveryMethod.ReliableOrdered,
+            damageData.SequenceChannel
+        );
+    }
+
+    public void OnPlayerTookDamage(NetConnection user, NetIncomingMessage damageData)
+    {
+        // TODO: Add logic for updating client's serverside hp
+        // var client = GetClient(user.RemoteEndPoint.Address);
+        
+        Console.WriteLine("Sending playertookdamage packet...");
+        
+        SendPacketToAllUsers(
+            damageData.PeekBytes(damageData.Data.Length - 5),
+            SfPacketType.PlayerTookDamage,
+            null,
+            NetDeliveryMethod.ReliableOrdered,
+            damageData.SequenceChannel
+        );
     }
 }
