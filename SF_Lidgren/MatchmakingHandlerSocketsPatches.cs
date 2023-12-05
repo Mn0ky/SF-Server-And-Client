@@ -39,7 +39,7 @@ public static class MatchmakingHandlerSocketsPatches
         var channel = msg.SequenceChannel;
         Debug.Log("Msg has channel: " + channel);
         
-        if (channel is > -2 and < 2 or > 9) // Don't want NetworkPlayer updates going through the normal p2p handler
+        if (channel is > -2 and < 2 or > 9)//  Don't want NetworkPlayer updates going through the normal p2p handler
         {
             __result = msg;
             return false;

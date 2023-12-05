@@ -1,4 +1,4 @@
-﻿using System.Net;
+﻿using System.Text;
 using Lidgren.Network;
 using System.Text.Json;
 
@@ -12,17 +12,21 @@ public class Server
     // TODO: (from above) this includes removing that unnecessary steamID
     // TODO: Handle cold exits by clients (directly quiting the game instead of returning to menu)
     // TODO: Possibility that multiple connections can be made by same client, bad!
+    
+    public string ServerLogPath { get; }
+    
     private readonly NetServer _masterServer;
+    private readonly ClientManager _clientMgr;
     private readonly string _webApitoken;
     private readonly SteamId _hostSteamId;
     private readonly HttpClient _httpClient;
     private readonly PacketWorker _packetWorker;
+    private readonly Random _rand;
     private readonly JsonSerializerOptions _jsonOptions;
-    private readonly ClientInfo[] _clients;
     //private readonly List<IPAddress> _approvedIPs;
     private const string LidgrenIdentifier = "monky.SF_Lidgren";
     private const string StickFightAppId = "674940"; 
-    private const int MaxPlayerCount = 4;
+    private const int MaxPlayerCount = 4; // Hardcoded to 4 for now to remain compatible with base game
 
     private int NumberOfClients => _masterServer.Connections.Count;
 
@@ -38,13 +42,15 @@ public class Server
         config.EnableMessageType(NetIncomingMessageType.ConnectionApproval);
         
         var server = new NetServer(config);
+        ServerLogPath = Path.Combine(Environment.CurrentDirectory, "debug_log.txt");
         _masterServer = server;
         _webApitoken = steamWebApiToken;
         _hostSteamId = hostSteamId;
+        _rand = new Random();
         _httpClient = new HttpClient(); // Perhaps configure SocketsHttpHandler.PooledConnectionLifetime ?
         _packetWorker = new PacketWorker(this);
         _jsonOptions = new JsonSerializerOptions {PropertyNameCaseInsensitive = true};
-        _clients = new ClientInfo[4];
+        _clientMgr = new ClientManager(MaxPlayerCount);
         //_approvedIPs = new List<IPAddress>();
     }
 
@@ -138,13 +144,13 @@ public class Server
         }    
             
         Console.WriteLine("Attempting to auth user...");
-        var address = msg.SenderEndPoint.Address;
-        var client = GetClient(address);
+        var address = msg.GetSenderIP();
+        var client = _clientMgr.GetClient(address);
         
         if (client is not null)
         {
             Console.WriteLine("Client detected as re-connecting, removing it from client list...");
-            RemoveClient(client);
+            _clientMgr.RemoveClient(client);
         }
 
         Console.WriteLine("User has not been authed, server should have received ticket to continue auth process...");
@@ -180,12 +186,12 @@ public class Server
 
     private void OnPlayerExit(NetIncomingMessage msg)
     {
-        var exitingPlayer = GetClient(msg.SenderEndPoint.Address);
+        var exitingPlayer = _clientMgr.GetClient(msg.GetSenderIP());
         if (exitingPlayer is null) return;
         
         Console.WriteLine("Client is leaving: " + exitingPlayer.Username);
         exitingPlayer.Status = NetConnectionStatus.Disconnected;
-        RemoveDisconnectedClients();
+        _clientMgr.RemoveDisconnectedClients();
     }
     
     private async Task AuthenticateUser(NetIncomingMessage msg)
@@ -207,7 +213,7 @@ public class Server
 
         Console.WriteLine("Player has successfully authed, allowing them to join...");
         //_approvedIPs.Add(senderConnection.RemoteEndPoint.Address);
-        senderConnection.Approve(_masterServer.CreateMessage("You have been accepted!")); // Client will join
+        senderConnection.Approve(); // Client will join
         _masterServer.Recycle(msg);
         //_masterServer.SendToAll();
     }
@@ -251,13 +257,11 @@ public class Server
 
         var playerUsername = await FetchSteamUserName(playerSteamID);
         
-        var newClient = new ClientInfo(playerSteamID,
+        _clientMgr.AddNewClient(playerSteamID,
             playerUsername,
             authTicket,
-            msg.SenderEndPoint.Address,
-            GetEmptyPlayerIndex());
+            msg.GetSenderIP());
         
-        AddNewClient(newClient);
         return true;
     }
     
@@ -274,62 +278,6 @@ public class Server
 
         return profileSummary.Response.Players[0].Personaname; // The client's steam name
     }
-
-    private void AddNewClient(ClientInfo newClient)
-    {
-        if (newClient.PlayerIndex != -1)
-        {
-            _clients[newClient.PlayerIndex] = newClient;
-            Console.WriteLine("Added new client!\n" + newClient);
-            return;
-        }
-
-        Console.WriteLine("AddNewClient() was called but no client was added with index " + newClient.PlayerIndex + ", bug??");
-    }
-    
-    private void RemoveClient(ClientInfo removedClient)
-    {
-        for (var i = 0; i < _clients.Length; i++)
-        {
-            var client = _clients[i];
-            
-            if (client is not null && client.Equals(removedClient))
-            {
-                _clients[i] = null; // Frees up spot for new player
-                Console.WriteLine("Client removed at index: " + i);
-                return;
-            }
-        }
-    }
-
-    private void RemoveDisconnectedClients()
-    {
-        for (var i = 0; i < _clients.Length; i++)
-        {
-            var client = _clients[i];
-            
-            if (client is not null && client.Status == NetConnectionStatus.Disconnected)
-                _clients[i] = null; // Frees up spot for new player
-        }
-    }
-    
-    private int GetEmptyPlayerIndex()
-    {
-        for (var i = 0; i < _clients.Length; i++)
-            if (_clients[i] is null)
-                return i;
-
-        return -1;
-    }
-    
-    public ClientInfo GetClient(IPAddress address) 
-        => _clients.FirstOrDefault(player => player is not null && Equals(player.Address, address));
-
-    private ClientInfo GetClient(int playerIndex)
-        => _clients[playerIndex];
-
-    private ClientInfo GetClient(SteamId id) 
-        => _clients.FirstOrDefault(player => player is not null && player.SteamID == id);
 
     private static void PrintStatusStr(NetBuffer msg)
         => Console.WriteLine(msg.ReadString());
@@ -368,7 +316,7 @@ public class Server
     
     public void OnPlayerRequestingIndex(NetConnection user)
     {
-        var playerInfo = GetClient(user.RemoteEndPoint.Address);
+        var playerInfo = _clientMgr.GetClient(user.RemoteEndPoint.Address);
         
         Console.WriteLine("This client's index will be: " + playerInfo.PlayerIndex);
         var tempMsg = _masterServer.CreateMessage();
@@ -384,7 +332,7 @@ public class Server
         tempMsg.Write(4); // Int representing number of bytes map has, 4 for single int '0' that signals vanilla
         tempMsg.Write(0); // Map data of int '0' signals lobby map
         
-        foreach (var client in _clients) // Should only be non-null clients
+        foreach (var client in _clientMgr.Clients) // Should only be non-null clients
         {
             // Write steamId of clients or if player index is empty signal this with invalid steamId
             tempMsg.Write(client is not null ? client.SteamID.id : 0UL);
@@ -425,7 +373,7 @@ public class Server
 
     public void OnPlayerUpdate(NetConnection user, NetIncomingMessage playerUpdateData)
     {
-        var client = GetClient(user.RemoteEndPoint.Address);
+        var client = _clientMgr.GetClient(user.RemoteEndPoint.Address);
 
         // foreach (var b in playerUpdateData.Data)
         // {
@@ -511,9 +459,6 @@ public class Server
 
     public void OnPlayerTookDamage(NetConnection user, NetIncomingMessage damageData)
     {
-        // TODO: Add logic for updating client's serverside hp
-        // var client = GetClient(user.RemoteEndPoint.Address);
-        
         Console.WriteLine("Sending playertookdamage packet...");
         
         SendPacketToAllUsers(
@@ -522,6 +467,62 @@ public class Server
             null,
             NetDeliveryMethod.ReliableOrdered,
             damageData.SequenceChannel
+        );
+        
+        // TODO: Finish logic for updating client's serverside hp
+        var attackerClient = _clientMgr.GetClient(user.RemoteEndPoint.Address);
+        var damagedClientEventChannel = damageData.SequenceChannel;
+        
+        var damagedClient = _clientMgr.GetClient((damagedClientEventChannel - 3) / 2);
+        var dmgAmount = damageData.ReadFloat();
+        damagedClient.DeductHp(dmgAmount);
+        
+        // TODO: Have server send out map packet--Integrate custom orders and custom maps
+        //if (damagedClient.IsAlive || _clientMgr.GetNumLivingClients() != 0) return;
+        // Round is over, 1 player left living
+
+        //_clientMgr.PostRoundCleanup();
+        
+        // Console.WriteLine("Round ended, attempting to change map!");
+        // var msg = _masterServer.CreateMessage(); // winner index, maptype, mapdata
+        // msg.Write((byte)attackerClient.PlayerIndex);
+        // msg.Write(0);
+        // msg.Write(_rand.Next(0, 110));
+        //
+        // SendPacketToAllUsers(
+        //     msg.Data,
+        //     SfPacketType.MapChange
+        // );
+    }
+
+    public void OnMapChanged(NetConnection user, NetIncomingMessage mapMsgData)
+    {
+        SendPacketToAllUsers(
+            mapMsgData.PeekBytes(mapMsgData.Data.Length - 5),
+            SfPacketType.MapChange,
+            null,
+            NetDeliveryMethod.ReliableOrdered,
+            mapMsgData.SequenceChannel
+        );
+    }
+
+    public void OnPlayerTalked(NetConnection user, NetIncomingMessage chatMsgData)
+    {
+        var chatMsgBytes = chatMsgData.PeekBytes(chatMsgData.Data.Length - 5);
+        var chatMsg = Encoding.UTF8.GetString(chatMsgBytes);
+        var sender = _clientMgr.GetClient(user.RemoteEndPoint.Address);
+        
+        // TODO: You have been accepted! <--- investigate
+        // TODO: Is the server only getting correct message? <--- investigate
+        // TODO: Error may stem from using ref keyword on value type parameters in certain patches <--- investigate
+        Console.WriteLine($"{sender.Username}: {chatMsg}");
+        
+        SendPacketToAllUsers(
+            chatMsgBytes,
+            SfPacketType.PlayerTalked,
+            user, // Don't need to transmit the msg to the original sender
+            NetDeliveryMethod.ReliableOrdered,
+            chatMsgData.SequenceChannel
         );
     }
 }

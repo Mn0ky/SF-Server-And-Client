@@ -30,7 +30,7 @@ public class NetworkPlayerPatches
         
         var listenForEventPackagesMethod = AccessTools.Method(typeof(NetworkPlayer), "ListenForEventPackages");
         var listenForEventPackagesMethodPrefix = new HarmonyMethod(typeof(NetworkPlayerPatches)
-            .GetMethod(nameof(ListenForEventPackagesMethod)));
+            .GetMethod(nameof(ListenForEventPackagesMethodPrefix)));
 
         harmonyInstance.Patch(initNetworkSpawnIDMethod, postfix: initNetworkSpawnIDMethodPostfix);
         harmonyInstance.Patch(listenForPositionPackagesMethod, prefix: listenForPositionPackagesMethodPrefix);
@@ -86,7 +86,7 @@ public class NetworkPlayerPatches
         return false;
     }
 
-    public static bool ListenForEventPackagesMethod(NetworkPlayer __instance, ref bool ___mIsActive, 
+    public static bool ListenForEventPackagesMethodPrefix(NetworkPlayer __instance, ref bool ___mIsActive, 
         ref ushort ___mNetworkSpawnID)
     {
         if (!MatchmakingHandler.RunningOnSockets) return true;

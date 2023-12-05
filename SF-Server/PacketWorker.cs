@@ -5,20 +5,32 @@ namespace SF_Server;
 public class PacketWorker
 {
 	private Server _server;
+	private SfPacketType[] _ignoredPacketTypes = 
+	{
+		//SfPacketType.PlayerUpdate,
+	};
 
 	public PacketWorker(Server server) => _server = server;
 
 	public void ParseGamePacket(NetIncomingMessage msg)
     {
 	    //uint lastTimeStamp = MultiplayerManager.LastTimeStamp;
-        Console.WriteLine("Raw Data length: " + msg.Data.Length);
         var timeSent = msg.ReadUInt32(); // <--- Time packet was sent
-        Console.WriteLine("Packet sent at time: " + timeSent);
-        
         var msgType = (SfPacketType)msg.ReadByte();
         var msgChannel = msg.SequenceChannel;
-        Console.WriteLine("Parsed StickFight packet of type: " + msgType);
-        Console.WriteLine("Got channel of: " + msgChannel);
+        
+        if (!_ignoredPacketTypes.Contains(msgType))
+        {
+	        var packetDebugInfo = $"""
+	                               
+	                               Raw Data length: {msg.Data.Length}
+	                               Packet sent at time: {timeSent}
+	                               Parsed StickFight packet of type: {msgType}
+	                               Got channel of: {msgChannel}
+	                               """;
+
+	        File.AppendAllText(_server.ServerLogPath, packetDebugInfo);
+        }
 		
         // if (msgChannel is > 1 and < 10) // Is update or event packet
         // {
@@ -38,8 +50,8 @@ public class PacketWorker
         //Console.WriteLine("Data length: " + msg.Data.Length);
         ExecutePacketData(msg, msgType, msg.SenderConnection);
     }
-
-    public void ExecutePacketData(NetIncomingMessage msg, SfPacketType messageType, NetConnection user)
+	
+	public void ExecutePacketData(NetIncomingMessage msg, SfPacketType messageType, NetConnection user)
     {
         switch (messageType)
 		{
@@ -72,6 +84,9 @@ public class PacketWorker
 		case SfPacketType.PlayerUpdate:
 			_server.OnPlayerUpdate(user, msg);
 			return;
+		case SfPacketType.PlayerTalked:
+			_server.OnPlayerTalked(user, msg);
+			return;
 		case SfPacketType.PlayerForceAdded:
 			_server.OnPlayerForceAdded(user, msg);
 			return;
@@ -85,7 +100,7 @@ public class PacketWorker
 			//this.mNetworkHandler.OnClientReadyUp(data);
 			return;
 		case SfPacketType.MapChange:
-			//this.mNetworkHandler.OnMapChanged(data);
+			_server.OnMapChanged(user, msg);
 			return;
 		case SfPacketType.WeaponSpawned:
 			//this.mNetworkHandler.OnWeaponSpawned(data);

@@ -14,7 +14,8 @@ public class ClientInfo : IEquatable<ClientInfo>
     public int Ping { get; set; }
     public PositionPackage PositionInfo { get; set; }
     public WeaponPackage WeaponInfo { get; set; }
-    public int Hp { get; set; }
+    public float Hp { get; private set; }
+    public bool IsAlive { get; private set; }
     public AuthTicket AuthTicket { get; }
 
     public ClientInfo(SteamId steamID, string steamUsername/*, NetConnection peer*/, AuthTicket authTicket, IPAddress address, int playerIndex)
@@ -26,8 +27,23 @@ public class ClientInfo : IEquatable<ClientInfo>
         Address = address;
         PlayerIndex = playerIndex;
         Ping = 0;
-        Hp = 0;
+        Hp = 100;
+        IsAlive = true;
         PositionInfo = new PositionPackage();
+    }
+
+    public void DeductHp(float amount)
+    {
+        Hp -= amount;
+        
+        if (Hp <= 0) 
+            IsAlive = false;
+    }
+
+    public void Revive()
+    {
+        IsAlive = true;
+        Hp = 100;
     }
 
     public override bool Equals(object obj) => obj is ClientInfo client && Equals(client.Address, Address);

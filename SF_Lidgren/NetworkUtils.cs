@@ -9,7 +9,7 @@ public static class NetworkUtils
     public static LidgrenData LidgrenData;
     // TODO: Switch array below for List<byte[]> later for better flexibility?
     public static NetIncomingMessage[] PlayerUpdatePackets = new NetIncomingMessage[4]; // For holding packets meant for update channel
-    public static NetIncomingMessage[] PlayerEventPackets = new NetIncomingMessage[4]; // For holding packets meant for update channel
+    public static NetIncomingMessage[] PlayerEventPackets = new NetIncomingMessage[4]; // For holding packets meant for event channel
     public static readonly byte[] EmptyByteArray = new byte[0];
 
     public static void SendPacketToServer(byte[] data, P2PPackageHandler.MsgType messageType,
@@ -27,9 +27,8 @@ public static class NetworkUtils
 
     public static void ExitServer(bool usingDebugExitButton)
     {
-        var importantData = LidgrenData;
-        importantData.LocalClient.Disconnect("I'm leaving >:(");
-        SteamUser.CancelAuthTicket(importantData.AuthTicketHandler);
+        LidgrenData.LocalClient.Disconnect("I'm leaving >:(");
+        SteamUser.CancelAuthTicket(LidgrenData.AuthTicketHandler);
         Debug.Log("Auth ticket has been canceled");
 
         if (!usingDebugExitButton) return; // If using the default "Main Menu" button
